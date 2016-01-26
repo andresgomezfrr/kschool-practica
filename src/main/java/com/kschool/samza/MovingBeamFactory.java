@@ -28,7 +28,7 @@ public class MovingBeamFactory implements BeamFactory {
     @Override
     public Beam<Object> makeBeam(SystemStream stream, Config config) {
         final List<String> dimensions = ImmutableList.of(
-                "client", "floor", "new_floor", "old_floor", "building", "new_building", "old_building"
+                "client", "floor", "new_floor", "old_floor", "building", "new_building", "old_building", "time"
         );
 
         final List<AggregatorFactory> aggregators = ImmutableList.of(

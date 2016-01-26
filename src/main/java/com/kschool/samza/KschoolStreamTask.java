@@ -23,15 +23,16 @@ public class KschoolStreamTask implements StreamTask, InitableTask {
     @Override
     public void process(IncomingMessageEnvelope incomingMessageEnvelope, MessageCollector messageCollector, TaskCoordinator taskCoordinator) throws Exception {
         Map<String, Object> msg = (Map<String, Object>) incomingMessageEnvelope.getMessage();
+        Long time = System.currentTimeMillis() / 1000L;
+
         String client = (String) msg.get("client");
         String currentBuilding = (String) msg.get("building");
         String currentFloor = (String) msg.get("floor");
-
         Map<String, Object> oldLocation = store.get(client);
 
         Map<String, Object> moving = new HashMap<>();
         moving.put("client", client);
-        moving.put("timestamp", System.currentTimeMillis() / 1000L);
+        moving.put("timestamp", time);
 
         if (oldLocation == null) {
             moving.put("old_building", "unknown");
@@ -40,14 +41,19 @@ public class KschoolStreamTask implements StreamTask, InitableTask {
             moving.put("building", currentBuilding);
             moving.put("new_floor", currentFloor);
             moving.put("floor", currentFloor);
+            moving.put("time", 1);
+            updateState(client, currentBuilding, currentFloor, time);
         } else {
             String oldBuilding = (String) oldLocation.get("building");
             String oldFloor = (String) oldLocation.get("floor");
+
+            Boolean moved = false;
 
             if (!oldBuilding.equals(currentBuilding)) {
                 moving.put("new_building", currentBuilding);
                 moving.put("old_building", oldBuilding);
                 moving.put("building", currentBuilding);
+                moved = true;
             } else {
                 moving.put("building", currentBuilding);
             }
@@ -56,18 +62,31 @@ public class KschoolStreamTask implements StreamTask, InitableTask {
                 moving.put("old_floor", oldFloor);
                 moving.put("new_floor", currentFloor);
                 moving.put("floor", currentFloor);
+                moved = true;
             } else {
                 moving.put("floor", currentFloor);
             }
+
+            if (moved) {
+                moving.put("time", 1);
+                updateState(client, currentBuilding, currentFloor, time);
+            } else {
+                Long oldTime = Long.parseLong(oldLocation.get("time").toString());
+                Long totalTime = time - oldTime;
+
+                moving.put("time", totalTime);
+            }
         }
-
-        Map<String, Object> newLocation = new HashMap<>();
-        newLocation.put("building", currentBuilding);
-        newLocation.put("floor", currentFloor);
-
-        store.put(client, newLocation);
 
         messageCollector.send(new OutgoingMessageEnvelope(KAFKA, moving));
         messageCollector.send(new OutgoingMessageEnvelope(DRUID, moving));
+    }
+
+    private void updateState(String client, String newBuilding, String newFloor, Long newTime) {
+        Map<String, Object> newLocation = new HashMap<>();
+        newLocation.put("time", newTime);
+        newLocation.put("building", newBuilding);
+        newLocation.put("floor", newFloor);
+        store.put(client, newLocation);
     }
 }
