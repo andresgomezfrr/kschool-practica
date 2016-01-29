@@ -1,0 +1,76 @@
+<nav class="navbar navbar-default">
+  <a class="navbar-brand" href="#">
+    <img alt="Brand" src="http://kschool.com/wp-content/uploads/2015/05/logo-kschool.png">
+  </a>
+  <form class="navbar-form navbar-left" role="search">
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Timestamp">
+    </div>
+    <button type="submit" class="btn btn-default">Submit</button>
+  </form>
+  </nav>
+  <div class="container">
+  <article>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-md-12 text-center chord-tit">
+            <h2><i class="fa fa-map"></i> Floors Moving</h2>
+          </div>
+        </div>
+        <div class="text-center floor"></div>
+      </div>
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-md-12 text-center chord-tit">
+            <h2><i class="fa fa-building"></i> Buildings Movements</h2>
+          </div>
+        </div>
+        <div class="text-center building"></div>
+      </div>
+    </div>
+  </article>
+</div>
+
+<script>
+$(document).ready(function(){
+  <% ['building', 'floor'].each do |source| %>
+  
+    var matrix = JSON.parse('<%= @data[source].to_json.html_safe %>'),
+        neighs = JSON.parse('<%= @neighs[source].to_json.html_safe %>');
+
+    kschoolMoving.drawChords({
+      matrix: kschoolMoving.generateMatrix(matrix),
+      neighs: neighs,
+      container: "<%= source %>"
+    });
+  <% end %>
+});
+
+$(".navbar-form").submit(function(e){
+      
+  var timestamp = $(this)
+    .find("input")
+      .val();
+  
+  // var containers = [".floor", ".building"];
+  // var matrix = JSON.parse('<%= @data.to_json.html_safe %>');
+  // var neighs = JSON.parse('<%= @neighs.to_json.html_safe %>');
+
+  // for (var i in containers) {
+  //   kschoolMoving.reDrawChords({
+  //     matrix: matrix,
+  //     neighs: neighs,
+  //     container: containers[i]
+  //   });
+  // }
+
+  // return false;
+  $.ajax({
+    url: "?search=" + timestamp,
+    dataType: "html",
+    method: "GET"
+  });
+  return false;
+});
+</script>
